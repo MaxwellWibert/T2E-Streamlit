@@ -299,9 +299,13 @@ def render_form():
         st.markdown("### Fitness & Weight")
         # Default val = 7.0 (median from stats)
         fw1, fw2 = st.columns(2)
-        fit = fw1.number_input("Fitness", 2.0, 23.9, value=7.0)
+        fit = fw1.number_input(
+            "Fitness", min_value=2.0, max_value=24.0, step=0.25, value=7.0
+        )
         # Default val = 28.7 (median from stats)
-        bmi = fw2.number_input("Body Mass Index", 18.5, 74.3, 28.7)
+        bmi = fw2.number_input(
+            "Body Mass Index", min_value=18.5, max_value=74.5, step=0.25, value=29.0
+        )
 
         # Comorbidities
         ## TODO maybe reformat as multiselect
