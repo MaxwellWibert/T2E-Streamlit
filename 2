@@ -284,11 +284,7 @@ def create_plot(cifs, cifs_alt):
     x = np.arange(dimOut + 4) / 4.0
     fig = go.Figure(
         layout=dict(
-            title=dict(
-                text="Cumulative ADRD Risk and Mortality Over Time",
-                xanchor="left",
-                yanchor="top",
-            ),
+            title="Cumulative ADRD Risk and Mortality Over Time",
             legend=dict(entrywidth=0),
         )
     )
@@ -313,7 +309,6 @@ def create_plot(cifs, cifs_alt):
                 name="CF ADRD Risk",
                 hovertext=hover_texts(y=y_adrd_alt, baseline_y=y_adrd),
                 hovertemplate="%{hovertext}",
-                line=dict(color="darkviolet", dash="dash"),
             )
         )
         fig.add_trace(
@@ -324,7 +319,6 @@ def create_plot(cifs, cifs_alt):
                 name="ADRD Risk",
                 hovertext=hover_texts(y=y_adrd),
                 hovertemplate="%{hovertext}",
-                line=dict(color="blueviolet"),
             )
         )
     else:
@@ -336,7 +330,6 @@ def create_plot(cifs, cifs_alt):
                 name="ADRD Risk",
                 hovertext=hover_texts(y=y_adrd),
                 hovertemplate="%{hovertext}",
-                line=dict(color="blueviolet"),
             )
         )
 
@@ -349,8 +342,7 @@ def create_plot(cifs, cifs_alt):
                 name="CF Mortality (w/o ADRD)",
                 hovertext=hover_texts(y=y_death_alt, baseline_y=y_death),
                 hovertemplate="%{hovertext}",
-                line=dict(color="red", dash="dash"),
-            ),
+            )
         )
 
     fig.add_trace(
@@ -361,7 +353,6 @@ def create_plot(cifs, cifs_alt):
             name="Mortality (w/o ADRD)",
             hovertext=hover_texts(y=y_death),
             hovertemplate="%{hovertext}",
-            line=dict(color="red"),
         )
     )
     fig.update_layout(
