@@ -76,6 +76,8 @@ class RiskProfile:
         ethnicity: str,
         fitness: float,
         bmi: float,
+        cvdrx: bool,
+        dmrx: bool,
     ):
         sex_int = 0 if sex == "M" else 1
         race_int = race_map[race]
@@ -137,6 +139,10 @@ class RiskProfile:
         X[9:] = torch.from_numpy(comorbid_vec)
 
         return X
+
+
+def compute_bmi(height: float, weight: float):
+    return 703 * weight / (height**2)
 
 
 class ResFFNN(nn.Module):
@@ -420,51 +426,9 @@ def render_form():
         race = d3.radio("Race", ["White", "Black", "Other", "Unkown"])
         eth = d4.radio("Ethnicity", ["Non-Hispanic", "Hispanic", "Unkown"])
 
-        # Fitness & BMI scores
-        st.markdown("### Fitness & Weight")
-        # Default val = 7.0 (median from stats)
-        fw1, fw2 = st.columns(2)
-        fit = fw1.number_input(
-            "Fitness", min_value=2.0, max_value=24.0, step=0.25, value=7.0
-        )
-        # Default val = 28.7 (median from stats)
-        bmi = fw2.number_input(
-            "Body Mass Index", min_value=18.5, max_value=74.5, step=0.25, value=29.0
-        )
-
         # Comorbidities
-        ## TODO maybe reformat as multiselect
         st.markdown("### Comorbidities")
-        # c1, c2, c3, c4 = st.columns(4)
-        #
-        # # first col
-        # afib = c1.checkbox("afib")
-        # anemia = c1.checkbox("anemia")
-        # arthritis = c1.checkbox("arthritis")
-        # asthma = c1.checkbox("asthma")
-        # cancer = c1.checkbox("cancer")
-        #
-        # # 2nd col
-        # ckd = c2.checkbox("ckd")
-        # copd = c2.checkbox("copd")
-        # depression = c2.checkbox("depression")
-        # diabetes = c2.checkbox("diabetes")
-        # heart_failure = c2.checkbox("heart failure")
-        #
-        # # 3rd col
-        # hypertension = c3.checkbox("hypertension")
-        # hyperlipidemia = c3.checkbox("hyperlipidemia")
-        # isch_heart = c3.checkbox("ischemic heart disease")
-        # stroke = c3.checkbox("stroke")
-        # tbi = c3.checkbox("tbi")
-        #
-        # # 4th col
-        # statin = c4.checkbox("statin")
-        # dmrx = c4.checkbox("DmRx")
-        # cvdrx = c4.checkbox("CVDRx")
-        # asma_copd = c4.checkbox("asma_copd")
-        # cvd = c4.checkbox("CVD")
-
+        # c1, c2, c3, c4
         option_names = [
             "afib",
             "anemia",
@@ -482,16 +446,59 @@ def render_form():
             "stroke",
             "tbi",
             "statin",
-            "dmrx",
-            "cvdrx",
             "asthma copd",
             "cvd",
         ]
+
         comorbidities = st.multiselect(
             "comorbidities",
             options=option_names,
             format_func=display_opt,
             label_visibility="hidden",
+        )
+
+        st.markdown("### Medication")
+
+        med_1, med_2 = st.columns(2)
+        dmrx = med_1.checkbox("Diabetes Mellitus RX")
+        cvdrx = med_2.checkbox("Cardivascular Disease RX")
+
+        # TODO Link to explainers for BMI and Fitness
+
+        # Fitness & BMI scores
+        st.markdown("### Fitness & Weight")
+        # Default val = 7.0 (median from stats)
+        fw1, fw2 = st.columns(2)
+        fit = fw1.number_input(
+            "Fitness (METs)",
+            min_value=2.0,
+            max_value=24.0,
+            step=0.25,
+            value=7.0,
+        )
+        # Default val = 28.7 (median from stats)
+        bmi_exp = fw2.number_input(
+            "Body Mass Index",
+            min_value=18.5,
+            max_value=74.5,
+            step=0.25,
+            value=29.0,
+        )
+
+        bmi_toggle = fw2.toggle("Use Weight & Height to Compute BMI")
+        weight = fw2.number_input(
+            "Weight (Pounds)",
+            min_value=100.0,
+            max_value=400.0,
+            step=1.0,
+            value=200.0,
+        )
+        height = fw2.number_input(
+            "Height (Inches)",
+            min_value=48.0,
+            max_value=84.0,
+            step=1.0,
+            value=70.0,
         )
 
         with st.expander(
@@ -500,14 +507,15 @@ def render_form():
             include_counter = st.toggle("Include Counterfactual (CF)")
             counter_1, counter_2 = st.columns(2)
             counter_fit = counter_1.number_input(
-                "CF Fitness",
+                "CF Fitness (METs)",
                 min_value=2.0,
                 max_value=24.0,
                 step=0.25,
                 value=7.0,
             )
             # Default val = 28.7 (median from stats)
-            counter_bmi = counter_2.number_input(
+
+            counter_bmi_exp = counter_2.number_input(
                 "CF Body Mass Index",
                 min_value=18.5,
                 max_value=74.5,
@@ -515,9 +523,33 @@ def render_form():
                 value=29.0,
             )
 
+            counter_bmi_toggle = counter_2.toggle(
+                "Use Weight and Height to Compute BMI"
+            )
+
+            counter_weight = counter_2.number_input(
+                "CF Weight (Pounds)",
+                min_value=100.0,
+                max_value=400.0,
+                step=1.0,
+                value=200.0,
+            )
+            counter_height = counter_2.number_input(
+                "CF Height (Inches)",
+                min_value=48.0,
+                max_value=84.0,
+                step=1.0,
+                value=73.0,
+            )
+
         submit = st.form_submit_button("Compute Risk Scores", type="primary")
 
     if submit:
+        if bmi_toggle:
+            bmi = compute_bmi(weight=weight, height=height)
+        else:
+            bmi = bmi_exp
+
         profile = RiskProfile.from_form(
             *tuple(comorbidities),
             age=age,
@@ -526,10 +558,17 @@ def render_form():
             ethnicity=eth,
             fitness=fit,
             bmi=bmi,
+            cvdrx=cvdrx,
+            dmrx=dmrx,
         )
         st.session_state.profile = profile
 
         if include_counter:
+            if counter_bmi_toggle:
+                counter_bmi = compute_bmi(weight=counter_weight, height=counter_height)
+            else:
+                counter_bmi = counter_bmi_exp
+
             alt_profile = RiskProfile.from_form(
                 *tuple(comorbidities),
                 age=age,
@@ -538,6 +577,8 @@ def render_form():
                 ethnicity=eth,
                 fitness=counter_fit,
                 bmi=counter_bmi,
+                cvdrx=cvdrx,
+                dmrx=dmrx,
             )
             st.session_state.alt_profile = alt_profile
         else:
