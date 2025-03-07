@@ -461,7 +461,7 @@ def render_form():
 
         med_1, med_2 = st.columns(2)
         dmrx = med_1.checkbox("Diabetes Mellitus RX")
-        cvdrx = med_2.checkbox("Cardivascular Disease RX")
+        cvdrx = med_2.checkbox("Cardiovascular Disease RX")
 
         # TODO Link to explainers for BMI and Fitness
 
@@ -473,7 +473,7 @@ def render_form():
             "Fitness (METs)",
             min_value=2.0,
             max_value=24.0,
-            step=0.25,
+            step=1.0,
             value=7.0,
         )
         # Default val = 28.7 (median from stats)
@@ -481,7 +481,7 @@ def render_form():
             "Body Mass Index",
             min_value=18.5,
             max_value=74.5,
-            step=0.25,
+            step=2.5,
             value=29.0,
         )
 
@@ -510,7 +510,7 @@ def render_form():
                 "CF Fitness (METs)",
                 min_value=2.0,
                 max_value=24.0,
-                step=0.25,
+                step=1.0,
                 value=7.0,
             )
             # Default val = 28.7 (median from stats)
@@ -519,7 +519,7 @@ def render_form():
                 "CF Body Mass Index",
                 min_value=18.5,
                 max_value=74.5,
-                step=0.25,
+                step=2.5,
                 value=29.0,
             )
 
@@ -586,6 +586,11 @@ def render_form():
         render_plot()
 
 
+# Feedback: include
+## Beta blockers -- backburner
+## AC-Inhibitors -- backburner
+## Change bmi ticker to 2.5 or 5 units -- DONE
+## change mets ticker to 1 unit -- DONE
 def render_plot():
     if "profile" in st.session_state and st.session_state.profile is not None:
         X = st.session_state.profile.to_vec()
